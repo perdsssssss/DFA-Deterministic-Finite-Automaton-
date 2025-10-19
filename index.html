@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DFA Simulator - At Least One 'b'</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+        header h1 { font-size: 2.5em; margin-bottom: 10px; }
+        .subtitle { font-size: 1.2em; opacity: 0.9; }
+        .main-content { padding: 40px; }
+        section { margin-bottom: 40px; }
+        section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+        .input-group { display: flex; gap: 10px; margin-bottom: 10px; }
+        #inputString {
+            flex: 1;
+            padding: 15px;
+            font-size: 1.1em;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            transition: border-color 0.3s;
+        }
+        #inputString:focus { outline: none; border-color: #667eea; }
+        .btn-primary, .btn-secondary {
+            padding: 15px 30px;
+            font-size: 1em;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary { background: #f0f0f0; color: #333; }
+        .btn-secondary:hover { background: #e0e0e0; }
+        .hint { color: #666; font-size: 0.9em; margin-top: 5px; }
+        .state-diagram-wrapper {
+            background: #f8f9ff;
+            border-radius: 15px;
+            padding: 60px 40px;
+            margin-bottom: 20px;
+            min-height: 300px;
+            position: relative;
+        }
+        .state-diagram {
+            position: relative;
+            height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 300px;
+        }
+        .state {
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+            z-index: 2;
+        }
+        .state.active { transform: scale(1.2); }
+        .state-circle {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: 3px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5em;
+            font-weight: bold;
+            background: white;
+            margin: 0 auto 10px;
+            transition: all 0.3s;
+        }
+        .state-circle.double {
+            box-shadow: 0 0 0 5px white, 0 0 0 8px #333;
+        }
+        .state.active .state-circle {
+            background: #667eea;
+            color: white;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+        }
+        .state-label { font-size: 0.9em; color: #666; }
+        svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+        .arrow { stroke: #333; stroke-width: 2; fill: none; transition: all 0.3s; }
+        .arrow.active { stroke: #28a745; stroke-width: 4; }
+        .arrow-head { fill: #333; transition: all 0.3s; }
+        .arrow-head.active { fill: #28a745; }
+        text { fill: #333; font-size: 18px; font-weight: bold; transition: all 0.3s; }
+        text.active { fill: #28a745; font-size: 20px; }
+        .steps-container {
+            background: #f8f9ff;
+            padding: 20px;
+            border-radius: 10px;
+            min-height: 150px;
+        }
+        .placeholder { text-align: center; color: #999; padding: 40px; }
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 15px;
+            background: white;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateX(-20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .step-number {
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .result-container {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            padding: 30px;
+            border-radius: 15px;
+            animation: fadeIn 0.5s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.9); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        .result-container.hidden { display: none; }
+        .result-container.accept { background: #d4edda; border: 3px solid #28a745; }
+        .result-container.reject { background: #f8d7da; border: 3px solid #dc3545; }
+        .result-icon { font-size: 4em; flex-shrink: 0; }
+        .result-text h3 { font-size: 1.8em; margin-bottom: 5px; }
+        .result-text p { font-size: 1.1em; color: #666; }
+        .test-buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+        .test-btn {
+            padding: 12px 24px;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: monospace;
+            font-weight: bold;
+            color: #667eea;
+            transition: all 0.3s;
+        }
+        .test-btn:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        footer {
+            background: #f8f9ff;
+            padding: 20px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>DFA Simulator</h1>
+            <p class="subtitle">Accepts strings with at least one 'b'</p>
+        </header>
+
+        <div class="main-content">
+            <section>
+                <h2>Input String</h2>
+                <div class="input-group">
+                    <input type="text" id="inputString" placeholder="Enter string (a's and b's only)" maxlength="50">
+                    <button id="simulateBtn" class="btn-primary">Simulate</button>
+                    <button id="clearBtn" class="btn-secondary">Clear</button>
+                </div>
+                <p class="hint">Enter a string using only 'a' and 'b' characters</p>
+            </section>
+
+            <section>
+                <h2>State Diagram</h2>
+                <div class="state-diagram-wrapper">
+                    <svg viewBox="0 0 800 280">
+                        <defs>
+                            <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" class="arrow-head" />
+                            </marker>
+                            <marker id="arrow-active" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                <polygon points="0 0, 10 3, 0 6" class="arrow-head active" />
+                            </marker>
+                        </defs>
+                        <!-- Start arrow -->
+                        <line x1="70" y1="140" x2="175" y2="140" class="arrow" marker-end="url(#arrow)" />
+                        <!-- q0 self-loop 'a' (top) -->
+                        <path id="arrow-q0-a" d="M 195 90 Q 200 20, 235 75" class="arrow" marker-end="url(#arrow)" />
+                        <text id="label-q0-a" x="210" y="35">a</text>
+                        <!-- q0 to q1 'b' (straight horizontal arrow) -->
+                        <line id="arrow-q0-q1-b" x1="250" y1="140" x2="525" y2="140" class="arrow" marker-end="url(#arrow)" />
+                        <text id="label-q0-q1-b" x="380" y="130">b</text>
+                        <!-- q1 self-loop 'a,b' (top right) -->
+                        <path id="arrow-q1-ab" d="M 550 90 Q 600 20, 600 85" class="arrow" marker-end="url(#arrow)" />
+                        <text id="label-q1-ab" x="600" y="35">a, b</text>
+                    </svg>
+                    <div class="state-diagram">
+                        <div class="state active" id="state-q0">
+                            <div class="state-circle">q₀</div>
+                            <div class="state-label">Start</div>
+                        </div>
+                        <div class="state" id="state-q1">
+                            <div class="state-circle double">q₁</div>
+                            <div class="state-label">Accept</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Simulation Steps</h2>
+                <div id="stepsContainer" class="steps-container">
+                    <p class="placeholder">Enter a string and click "Simulate" to see the steps</p>
+                </div>
+            </section>
+
+            <section>
+                <div id="resultContainer" class="result-container hidden">
+                    <div class="result-icon" id="resultIcon"></div>
+                    <div class="result-text">
+                        <h3 id="resultStatus"></h3>
+                        <p id="resultDetail"></p>
+                    </div>
+                </div>
+            </section>
+
+            <section>
+                <h2>Quick Test Cases</h2>
+                <div class="test-buttons">
+                    <button class="test-btn" data-test="b">b</button>
+                    <button class="test-btn" data-test="ab">ab</button>
+                    <button class="test-btn" data-test="ba">ba</button>
+                    <button class="test-btn" data-test="abb">abb</button>
+                    <button class="test-btn" data-test="aabba">aabba</button>
+                    <button class="test-btn" data-test="">ε (empty)</button>
+                    <button class="test-btn" data-test="a">a</button>
+                    <button class="test-btn" data-test="aa">aa</button>
+                    <button class="test-btn" data-test="aaa">aaa</button>
+                    <button class="test-btn" data-test="bbb">bbb</button>
+                </div>
+            </section>
+        </div>
+
+        <footer>
+            <p>National University Manila | Automata Theory and Formal Languages</p>
+        </footer>
+    </div>
+
+    <script>
+        const dfa = {
+            states: { 
+                q0: { a: 'q0', b: 'q1' }, 
+                q1: { a: 'q1', b: 'q1' } 
+            },
+            start: 'q0',
+            accept: ['q1'],
+            
+            simulate(str) {
+                let state = this.start;
+                let steps = [{ 
+                    step: 0, 
+                    state, 
+                    symbol: null, 
+                    desc: 'Starting at state q₀ (no b seen yet)', 
+                    trans: null 
+                }];
+                
+                for (let i = 0; i < str.length; i++) {
+                    const sym = str[i];
+                    if (sym !== 'a' && sym !== 'b') {
+                        return { valid: false, error: `Invalid character: '${sym}'. Only 'a' and 'b' allowed.` };
+                    }
+                    
+                    const prevState = state;
+                    const nextState = this.states[state][sym];
+                    
+                    let desc = `Read '${sym}': ${prevState} → ${nextState}`;
+                    if (prevState === 'q0' && nextState === 'q0') {
+                        desc += ' (still no b seen)';
+                    } else if (prevState === 'q0' && nextState === 'q1') {
+                        desc += ' (found b! now accepting)';
+                    } else if (nextState === 'q1') {
+                        desc += ' (stay accepting)';
+                    }
+                    
+                    const trans = `${prevState}-${nextState}-${sym}`;
+                    steps.push({ 
+                        step: i + 1, 
+                        symbol: sym, 
+                        state: nextState, 
+                        desc, 
+                        trans,
+                        prevState
+                    });
+                    state = nextState;
+                }
+                
+                return { 
+                    valid: true, 
+                    accepted: this.accept.includes(state), 
+                    steps,
+                    finalState: state
+                };
+            }
+        };
+
+        const inputEl = document.getElementById('inputString');
+        const stepsContainer = document.getElementById('stepsContainer');
+        const resultContainer = document.getElementById('resultContainer');
+
+        function clearHighlights() {
+            document.querySelectorAll('.state').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.arrow, .arrow-head, text').forEach(el => {
+                el.classList.remove('active');
+                if (el.tagName === 'line' || el.tagName === 'path') {
+                    el.setAttribute('marker-end', 'url(#arrow)');
+                }
+            });
+        }
+
+        async function animateSteps(steps) {
+            clearHighlights();
+            stepsContainer.innerHTML = '';
+            resultContainer.classList.add('hidden');
+
+            for (let i = 0; i < steps.length; i++) {
+                const step = steps[i];
+                
+                // Clear previous highlights
+                clearHighlights();
+                
+                // Highlight current state
+                const stateEl = document.getElementById(`state-${step.state}`);
+                if (stateEl) stateEl.classList.add('active');
+                
+                // Highlight arrow for this transition
+                if (step.prevState && step.symbol) {
+                    let arrowId, labelId;
+                    
+                    if (step.prevState === 'q0' && step.symbol === 'a') {
+                        arrowId = 'arrow-q0-a';
+                        labelId = 'label-q0-a';
+                    } else if (step.prevState === 'q0' && step.symbol === 'b') {
+                        arrowId = 'arrow-q0-q1-b';
+                        labelId = 'label-q0-q1-b';
+                    } else if (step.prevState === 'q1' && (step.symbol === 'a' || step.symbol === 'b')) {
+                        // Highlight q1 self-loop for both 'a' and 'b'
+                        arrowId = 'arrow-q1-ab';
+                        labelId = 'label-q1-ab';
+                    }
+                    
+                    const arrowEl = document.getElementById(arrowId);
+                    const labelEl = document.getElementById(labelId);
+                    
+                    if (arrowEl) {
+                        arrowEl.classList.add('active');
+                        arrowEl.setAttribute('marker-end', 'url(#arrow-active)');
+                    }
+                    if (labelEl) labelEl.classList.add('active');
+                }
+
+                // Add step to log
+                const stepEl = document.createElement('div');
+                stepEl.className = 'step';
+                stepEl.innerHTML = `
+                    <div class="step-number">${step.step}</div>
+                    <div><strong>${step.desc}</strong></div>
+                `;
+                stepsContainer.appendChild(stepEl);
+                
+                // Wait before next step
+                await new Promise(r => setTimeout(r, 800));
+            }
+        }
+
+        function showResult(accepted, finalState) {
+            resultContainer.className = `result-container ${accepted ? 'accept' : 'reject'}`;
+            document.getElementById('resultIcon').textContent = accepted ? '✅' : '❌';
+            document.getElementById('resultStatus').textContent = accepted ? 'STRING ACCEPTED!' : 'STRING REJECTED!';
+            document.getElementById('resultDetail').textContent = accepted 
+                ? `Final state: ${finalState} (accepting). String contains at least one 'b'.` 
+                : `Final state: ${finalState} (non-accepting). String contains no 'b'.`;
+        }
+
+        document.getElementById('simulateBtn').addEventListener('click', async () => {
+            const input = inputEl.value.trim();
+            const result = dfa.simulate(input);
+            
+            if (!result.valid) {
+                alert(result.error);
+                return;
+            }
+            
+            await animateSteps(result.steps);
+            showResult(result.accepted, result.finalState);
+        });
+
+        document.getElementById('clearBtn').addEventListener('click', () => {
+            inputEl.value = '';
+            stepsContainer.innerHTML = '<p class="placeholder">Enter a string and click "Simulate" to see the steps</p>';
+            resultContainer.classList.add('hidden');
+            clearHighlights();
+            document.getElementById('state-q0').classList.add('active');
+        });
+
+        document.querySelectorAll('.test-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                inputEl.value = btn.dataset.test;
+                document.getElementById('simulateBtn').click();
+            });
+        });
+
+        inputEl.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('simulateBtn').click();
+            }
+        });
+    </script>
+</body>
+</html>
